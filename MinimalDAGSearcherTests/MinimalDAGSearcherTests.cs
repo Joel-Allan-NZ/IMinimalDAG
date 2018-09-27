@@ -122,9 +122,19 @@ namespace MinimalDAGSearcher.Tests
 
             var contians = _dawg.Contains("ado");
 
-            var Actual = minimalDAGSearcher.FindMatchingSequencesContainingIndex(CharPool, existing, default(char), 0, 10).Select(x => string.Concat(x)).ToList();
+            var Actual = minimalDAGSearcher.FindMatchingSequencesContainingIndex(CharPool, existing, default(char), 0, 10).Select(x => string.Concat(x.MatchingSequence)).ToList();
 
             CollectionAssert.AreEquivalent(ExpectedMatches, Actual);
+        }
+
+        [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethod]
+        public void CornerCase()
+        {
+            List<char> pool = new List<char>() { 'b', 'i', 'd', 'a', 'r', 's' };
+            MinimalDAGSearcher<char> minimalDAGSearcher = new MinimalDAGSearcher<char>(_dawg);
+            var results = minimalDAGSearcher.FindMatchingSequences(pool, "\0\0\0\0\0\0\0doctor\0\0".ToArray(), default(char), 1).Select(x => string.Concat(x.MatchingSequence)).ToList();
+
+            Assert.IsTrue(results.Count > 0);
         }
 
         //[TestMethod]

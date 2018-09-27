@@ -74,6 +74,8 @@ namespace MinimalDAGSearcher
             CurrentNode = nextNode;
             ValuePool = other.ValuePool.ToList();
             UsedValues = new List<T>(other.UsedValues) { CurrentNode.GetValue() };
+            this.WildCardIndices = new List<int>(other.WildCardIndices);
+            this.WildCardCount = other.WildCardCount;
         }
     }
 }
