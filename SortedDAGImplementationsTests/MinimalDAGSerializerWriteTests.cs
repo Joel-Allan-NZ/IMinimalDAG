@@ -29,7 +29,7 @@ namespace MinimalDAGImplementations.Tests
         public static void ClassInitialize(TestContext context)
         {
             _dag = new MinimalDAG<char>(TestHelpers.GetSortedLines(Path.Combine(Directory.GetCurrentDirectory(), "EnglishScrabbleWords.txt")), new MinimalDAGNodeFactory<char>());
-            _scrabbleTestDataDirectoryPath = Directory.GetCurrentDirectory();
+            _scrabbleTestDataDirectoryPath = @"C:\Users\joelc\source\repos\ScrabbleSolver\TestData"; //Directory.GetCurrentDirectory();
 
             _intData = TestData.GetIntSequences().SequenceOrder();
             _structData = TestData.GetCoordSequences().SequenceOrder();

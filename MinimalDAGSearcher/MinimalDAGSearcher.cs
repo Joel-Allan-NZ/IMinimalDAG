@@ -68,20 +68,43 @@ namespace MinimalDAGSearcher
 
             foreach (var PossibleStartNode in PossibleStartingNodes)
             {
-                var StartingPrefixSearchState = new SequenceSearchState<T>(PossibleStartNode, valuePool, startingIndex);
+                var StartingPrefixSearchState = new SequenceSearchState<T>(PossibleStartNode, valuePool, startingIndex, _wildCardCount);
 
                 foreach (var Prefix in DepthFirstSequenceSearch(StartingPrefixSearchState, _dag.GetParents, PrefixBoundaries, -1))
                 {
                     var SequenceStartIndex = Prefix.Index;
                     Prefix.Index = startingIndex;
-                    Prefix.UsedValues.Reverse();
-                    Prefix.UsedValues.Add(PossibleStartNode.GetValue());
                     Prefix.CurrentNode = PossibleStartNode;
 
                     foreach (var Suffix in DepthFirstSequenceSearch(Prefix, _dag.GetChildren, SuffixBoundaries, 1))
-                        yield return new DAGSearchResult<T>(Suffix.UsedValues, Suffix.WildCardIndices, SequenceStartIndex);
+                    {
+                        var Sequence = BuildSequence(Suffix.UsedValues, SequenceStartIndex);
+                        yield return new DAGSearchResult<T>(Sequence, Suffix.WildCardIndices, SequenceStartIndex, Suffix.UsedValues);
+                    }
+
                 }
             }
+        }
+
+        /// <summary>
+        /// Builds a List{<typeparamref name="T"/>} that represents the matched sequence.
+        /// </summary>
+        /// <param name="values"></param>
+        /// <param name="startingPosition"></param>
+        /// <returns></returns>
+        private List<T> BuildSequence(Dictionary<int, T> values, int startingPosition)
+        {
+            List<T> Sequence = new List<T>();
+            for(int i = startingPosition; i<_searchSpace.Length; i++)
+            {
+                if (!_searchSpace[i].Equals(_emptyValue))
+                    Sequence.Add(_searchSpace[i]);
+                else if (values.ContainsKey(i))
+                    Sequence.Add(values[i]);
+                else
+                    break;
+            }
+            return Sequence;
         }
 
         /// <summary>
@@ -119,20 +142,28 @@ namespace MinimalDAGSearcher
                 }
                 else
                 {
-                    if (IsIndexValidBoundary(CurrentState.Index, sequenceBoundaries))
+                    bool IsEnd = false;
+                    List<IMinimalDAGNode<T>> OtherRelatives = new List<IMinimalDAGNode<T>>();
+
+                    foreach(var Relative in Relatives)
                     {
-                        foreach (var Relative in Relatives.Where(x => IsPossibleSequenceEnd(x)))
-                            yield return CurrentState;
+                        if (IsPossibleSequenceEnd(Relative))
+                            IsEnd = true;
+                        else
+                            OtherRelatives.Add(Relative);
                     }
+
+                    if (IsIndexValidBoundary(CurrentState.Index, sequenceBoundaries) && IsEnd)
+                        yield return CurrentState; 
 
                     if (IsSpaceOccupied(NextLocation, out NextValue))
                     {
-                        foreach (var Relative in Relatives.Where(x => x.GetValue().Equals(NextValue)))
+                        foreach (var Relative in OtherRelatives.Where(x => x.GetValue().Equals(NextValue)))
                             ToCheck.Push(new SequenceSearchState<T>(CurrentState, Relative, stepDirection));
                     }
                     else
                     {
-                        foreach (var Relative in Relatives)
+                        foreach (var Relative in OtherRelatives)
                         {
                             NextValue = Relative.GetValue();
                             if (CurrentState.ValuePool.Contains(NextValue))
@@ -239,7 +270,7 @@ namespace MinimalDAGSearcher
         /// <param name="emptyValue">A value in the <paramref name="existingValues"/> that represents a currently empty space in the sequence.</param>
         /// <param name="wildCardCount">The number of wildcard values to use in the search</param>
         /// <returns></returns>
-        public IEnumerable<DAGSearchResult<T>> FindMatchingSequences(IEnumerable<T> valuePool,  T[] existingValues, T emptyValue, int wildCardCount)
+        public IEnumerable<DAGSearchResult<T>> FindMatchingSequences(IEnumerable<T> valuePool, T[] existingValues, T emptyValue, int wildCardCount)
         {
             _searchSpace = existingValues;
             _emptyValue = emptyValue;
@@ -281,6 +312,6 @@ namespace MinimalDAGSearcher
             return _dag.Contains(sequence);
         }
 
-   
+
     }
 }

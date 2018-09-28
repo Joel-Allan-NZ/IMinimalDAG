@@ -29,51 +29,82 @@ namespace MinimalDAGSearcher
         /// </summary>
         internal int WildCardCount { get; set; }
 
-        /// <summary>
-        /// The <typeparamref name="T"/> values that have already been used in this search.
-        /// </summary>
-        internal List<T> UsedValues { get; set; }
+        ///// <summary>
+        ///// The <typeparamref name="T"/> values that have already been used in this search.
+        ///// </summary>
+        //internal List<T> UsedValues { get; set; }
+        internal Dictionary<int, T> UsedValues { get; set; }
 
         /// <summary>
         /// The indices at which a wild card has been used.
         /// </summary>
         internal List<int> WildCardIndices { get; set; }
 
-        internal SequenceSearchState(IMinimalDAGNode<T> currentNode, IEnumerable<T> valuePool, int index, int wildCardCount = 0, List<T> usedValues = null)
+        internal SequenceSearchState(IMinimalDAGNode<T> currentNode, IEnumerable<T> valuePool, int index, int wildCardCount = 0, Dictionary<int, T> usedValues=null) //, List<T> usedValues = null)
         {
             WildCardIndices = new List<int>();
             CurrentNode = currentNode;
             ValuePool = valuePool;
             Index = index;
-            UsedValues = usedValues ?? new List<T>();
+            UsedValues = usedValues ?? new Dictionary<int, T>();//new List<T>();
             WildCardCount = wildCardCount;
         }
 
-        internal SequenceSearchState(SequenceSearchState<T> other, IMinimalDAGNode<T> nextNode, int stepDirection, T validValue, bool usedWildCard)
+        //internal SequenceSearchState(SequenceSearchState<T> other, IMinimalDAGNode<T> nextNode, int stepDirection, T validValue, bool usedWildCard)
+        //{
+        //    Index = other.Index + stepDirection;
+        //    CurrentNode = nextNode;
+        //    this.WildCardIndices = new List<int>(other.WildCardIndices);
+        //    if (usedWildCard)
+        //    {
+        //        WildCardCount = other.WildCardCount - 1;
+        //        ValuePool = new List<T>(other.ValuePool);
+        //        UsedValues = new List<T>(other.UsedValues) { validValue };
+        //        WildCardIndices.Add(other.Index);
+        //    }
+        //    else
+        //    {
+        //        ValuePool = other.ValuePool.ExceptFirst(validValue).ToList();
+        //        UsedValues = new List<T>(other.UsedValues) { validValue };
+        //    }
+        //}
+
+        internal SequenceSearchState(SequenceSearchState<T> other, IMinimalDAGNode<T> nextNode, int stepDirection, T UsedValue, bool wildCard)
         {
+            this.WildCardIndices = new List<int>(other.WildCardIndices);
             Index = other.Index + stepDirection;
             CurrentNode = nextNode;
-            this.WildCardIndices = new List<int>(other.WildCardIndices);
-            if (usedWildCard)
+            UsedValues = new Dictionary<int, T>(other.UsedValues);
+            UsedValues.Add(Index, UsedValue);
+            if(wildCard)
             {
                 WildCardCount = other.WildCardCount - 1;
                 ValuePool = new List<T>(other.ValuePool);
-                UsedValues = new List<T>(other.UsedValues);
                 WildCardIndices.Add(other.Index);
             }
             else
             {
-                ValuePool = other.ValuePool.ExceptFirst(validValue).ToList();
-                UsedValues = new List<T>(other.UsedValues) { validValue };
+                WildCardCount = other.WildCardCount;
+                ValuePool = other.ValuePool.ExceptFirst(UsedValue).ToList();
             }
         }
+
+        //internal SequenceSearchState(SequenceSearchState<T> other, IMinimalDAGNode<T> nextNode, int stepDirection)
+        //{
+        //    Index = other.Index + stepDirection;
+        //    CurrentNode = nextNode;
+        //    ValuePool = other.ValuePool.ToList();
+        //    UsedValues = new List<T>(other.UsedValues) { CurrentNode.GetValue() };
+        //    this.WildCardIndices = new List<int>(other.WildCardIndices);
+        //    this.WildCardCount = other.WildCardCount;
+        //}
 
         internal SequenceSearchState(SequenceSearchState<T> other, IMinimalDAGNode<T> nextNode, int stepDirection)
         {
             Index = other.Index + stepDirection;
             CurrentNode = nextNode;
-            ValuePool = other.ValuePool.ToList();
-            UsedValues = new List<T>(other.UsedValues) { CurrentNode.GetValue() };
+            ValuePool = new List<T>(other.ValuePool);//.ToList();
+            UsedValues = new Dictionary<int, T>();// { Index, CurrentNode.GetValue() };
             this.WildCardIndices = new List<int>(other.WildCardIndices);
             this.WildCardCount = other.WildCardCount;
         }

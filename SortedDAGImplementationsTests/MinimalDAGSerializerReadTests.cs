@@ -19,7 +19,7 @@ namespace MinimalDAGImplementations.Tests
         [ClassInitialize]
         public static void ClassInitialize(TestContext context)
         {
-            _testDataDirectoryPath = Directory.GetCurrentDirectory();
+            _testDataDirectoryPath = @"C:\Users\joelc\source\repos\ScrabbleSolver\TestData"; //Directory.GetCurrentDirectory();
 
             _intData = TestData.GetIntSequences().SequenceOrder();
             _structData = TestData.GetCoordSequences().SequenceOrder();

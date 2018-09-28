@@ -77,7 +77,7 @@ namespace MinimalDAGSearcher.Tests
                 "izzards",
             };
 
-            var Actual = minimalDAGSearcher.FindMatchingSequences(CharPool, existing, default(char), 6).Select(x => string.Concat(x)).ToList();
+            var Actual = minimalDAGSearcher.FindMatchingSequences(CharPool, existing, default(char), 6).Select(x => string.Concat(x.MatchingSequence)).ToList();
 
             CollectionAssert.AreEquivalent(ExpectedMatches, Actual);
         }
@@ -95,7 +95,7 @@ namespace MinimalDAGSearcher.Tests
                 default(char)
             };
 
-            var Actual = minimalDAGSearcher.FindMatchingSequences(CharPool, existing, default(char), 14).Select(x => string.Concat(x)).ToList();
+            var Actual = minimalDAGSearcher.FindMatchingSequences(CharPool, existing, default(char), 14).Select(x => string.Concat(x.MatchingSequence)).ToList();
             Assert.IsTrue(Actual.Count > 0);
         }
 
@@ -130,7 +130,7 @@ namespace MinimalDAGSearcher.Tests
         [Microsoft.VisualStudio.TestTools.UnitTesting.TestMethod]
         public void CornerCase()
         {
-            List<char> pool = new List<char>() { 'b', 'i', 'd', 'a', 'r', 's' };
+            List<char> pool = new List<char>() { 'b', 'i', 'd', 'a', 'r', 'x' };
             MinimalDAGSearcher<char> minimalDAGSearcher = new MinimalDAGSearcher<char>(_dawg);
             var results = minimalDAGSearcher.FindMatchingSequences(pool, "\0\0\0\0\0\0\0doctor\0\0".ToArray(), default(char), 1).Select(x => string.Concat(x.MatchingSequence)).ToList();
 

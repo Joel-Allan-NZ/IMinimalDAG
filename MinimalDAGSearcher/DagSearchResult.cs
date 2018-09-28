@@ -22,12 +22,15 @@ namespace MinimalDAGSearcher
         /// The starting index of the recovered sequence, relative to the <see cref="MinimalDAGSearcher"/> search space.
         /// </summary>
         public int SequenceStartIndex { get; private set; }
+
+        public Dictionary<int, T> AdditionLocations { get; set; }
         
-        public DAGSearchResult(IEnumerable<T> matchingSequence, List<int> wildCardPositions, int startIndex)
+        public DAGSearchResult(IEnumerable<T> matchingSequence, List<int> wildCardPositions, int startIndex, Dictionary<int, T> newElementPositions)
         {
             MatchingSequence = matchingSequence;
             WildCardPositions = wildCardPositions;
             SequenceStartIndex = startIndex;
+            AdditionLocations = newElementPositions;
         }
     }
 }
