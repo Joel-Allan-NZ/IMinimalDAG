@@ -19,6 +19,8 @@ namespace MinimalDAGSearcher
         /// The Current <see cref="IMinimalDAGNode{T}"/> being searched
         /// </summary>
         internal IMinimalDAGNode<T> CurrentNode { get; set; }
+
+       // internal IMinimalDAGNode<T> PreviousNode { get; set; }
         /// <summary>
         /// The <typeparamref name="T"/> values still to be used.
         /// </summary>
@@ -40,9 +42,10 @@ namespace MinimalDAGSearcher
         /// </summary>
         internal List<int> WildCardIndices { get; set; }
 
-        internal SequenceSearchState(IMinimalDAGNode<T> currentNode, IEnumerable<T> valuePool, int index, int wildCardCount = 0, Dictionary<int, T> usedValues=null) //, List<T> usedValues = null)
+        internal SequenceSearchState(IMinimalDAGNode<T> currentNode, IEnumerable<T> valuePool, int index, int wildCardCount = 0, 
+                                                                        Dictionary<int, T> usedValues=null, List<int> wildCardIndices = null)
         {
-            WildCardIndices = new List<int>();
+            WildCardIndices = wildCardIndices ?? new List<int>();
             CurrentNode = currentNode;
             ValuePool = valuePool;
             Index = index;
@@ -76,11 +79,12 @@ namespace MinimalDAGSearcher
             CurrentNode = nextNode;
             UsedValues = new Dictionary<int, T>(other.UsedValues);
             UsedValues.Add(Index, UsedValue);
+           // PreviousNode = other.CurrentNode;
             if(wildCard)
             {
                 WildCardCount = other.WildCardCount - 1;
                 ValuePool = new List<T>(other.ValuePool);
-                WildCardIndices.Add(other.Index);
+                WildCardIndices.Add(Index);
             }
             else
             {
@@ -103,8 +107,9 @@ namespace MinimalDAGSearcher
         {
             Index = other.Index + stepDirection;
             CurrentNode = nextNode;
+            //PreviousNode = other.CurrentNode;
             ValuePool = new List<T>(other.ValuePool);//.ToList();
-            UsedValues = new Dictionary<int, T>();// { Index, CurrentNode.GetValue() };
+            UsedValues = new Dictionary<int, T>(other.UsedValues);// { Index, CurrentNode.GetValue() };
             this.WildCardIndices = new List<int>(other.WildCardIndices);
             this.WildCardCount = other.WildCardCount;
         }

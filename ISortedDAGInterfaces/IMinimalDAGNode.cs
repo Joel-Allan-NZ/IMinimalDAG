@@ -13,57 +13,24 @@ namespace IMinimalDAGInterfaces
     public interface IMinimalDAGNode<T>
     {
         /// <summary>
-        /// Returns all the <see cref="Guid"/> child IDs.
+        /// The IDs of the children of this node.
         /// </summary>
-        /// <returns></returns>
-        IList<Guid> GetChildIDs();
-
+        List<Guid> Children { get; set; }
         /// <summary>
-        /// Returns all the <see cref="Guid"/> parent IDs.
+        /// The IDs of the parents of this node.
         /// </summary>
-        /// <returns></returns>
-        IList<Guid> GetParentIDs();
-
+        List<Guid> Parents { get; set; }
         /// <summary>
-        /// Returns the <typeparamref name="T"/> value.
+        /// The value associated with this node.
         /// </summary>
-        /// <returns></returns>
-        T GetValue();
-
+        T Value { get;  }
         /// <summary>
-        /// Adds <paramref name="childID"/> to this node's child collection.
+        /// This node's ID.
         /// </summary>
-        /// <param name="childID"></param>
-        void AddChild(Guid childID);
-
+        Guid ID { get; }
         /// <summary>
-        /// Adds <paramref name="parentID"/> to this node's parent collection.
+        /// Whether or not this node is registered with the parent <see cref="IMinimalDAG{T}"/>
         /// </summary>
-        /// <param name="childID"></param>
-        void AddParent(Guid parentID);
-
-        /// <summary>
-        /// Remove <paramref name="child"/> from this node's child collection.
-        /// </summary>
-        /// <param name="child"></param>
-        void RemoveChildID(Guid child);
-
-        /// <summary>
-        /// Returns the <see cref="Guid"/> ID value of this node.
-        /// </summary>
-        /// <returns></returns>
-        Guid GetID();
-
-        /// <summary>
-        /// Returns a boolean representing whether or not the current node has been registered
-        ///  (intended for use with <see cref="IMinimalDAG{T}"/> construction).
-        /// </summary>
-        /// <returns></returns>
-        bool IsRegistered();
-
-        /// <summary>
-        /// Record that this node has been registered.
-        /// </summary>
-        void RegisterSuffix();
+        bool IsSuffixRegistered { get; set; }
     }
 }

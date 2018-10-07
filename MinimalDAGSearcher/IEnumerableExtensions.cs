@@ -9,20 +9,20 @@ namespace MinimalDAGSearcher.Extensions
     public static class IEnumerableExtensions
     {
         /// <summary>
-        /// Filters out the first occurence of an object from this IEnumerable.
+        /// Returns a new IEnumerable{<typeparamref name="T"/>} without the first occurence of <typeparamref name="T"/> <paramref name="toExclude"/>
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="enumerable"></param>
-        /// <param name="except"></param>
+        /// <param name="toExclude"></param>
         /// <returns></returns>
-        public static IEnumerable<T> ExceptFirst<T>(this IEnumerable<T> enumerable, T except)
+        public static IEnumerable<T> ExceptFirst<T>(this IEnumerable<T> enumerable, T toExclude)
         {
             bool Found = false;
             foreach (T item in enumerable)
             {
                 if (!Found)
                 {
-                    if (item.Equals(except))
+                    if (item.Equals(toExclude))
                         Found = true;
                     else
                         yield return item;

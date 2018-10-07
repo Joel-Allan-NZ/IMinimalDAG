@@ -27,11 +27,11 @@ namespace MinimalDAGImplementations.Serializer
                 settings.Converters.Add(new MinimalDAGNodeConverter<T>());
                 settings.Converters.Add(new MinimalDAGNodeFactoryConverter<T>());
 
-                JsonExtensions.SerializeToFileCompressed(MinimalDAG, filePath, settings);
+                JsonExtensions.WriteCompressedJSONToFile(MinimalDAG, filePath, settings);
             }
-            catch(UnauthorizedAccessException e)
+            catch(UnauthorizedAccessException)
             {
-                throw e;
+                throw;
             }
         }
 
@@ -46,7 +46,7 @@ namespace MinimalDAGImplementations.Serializer
             settings.Converters.Add(new MinimalDAGNodeConverter<T>());
             settings.Converters.Add(new MinimalDAGNodeFactoryConverter<T>());
 
-            return (IMinimalDAG<T>)JsonExtensions.DeserializeFromFileCompressed<IMinimalDAG<T>>(filePath, settings);
+            return (IMinimalDAG<T>)JsonExtensions.ReadCompressedJSONFromFile<IMinimalDAG<T>>(filePath, settings);
         }
     }
 }

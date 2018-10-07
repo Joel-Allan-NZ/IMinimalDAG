@@ -49,5 +49,16 @@ namespace IMinimalDAGInterfaces
         /// <param name="node"></param>
         /// <returns></returns>
         IEnumerable<IMinimalDAGNode<T>> GetParents(IMinimalDAGNode<T> node);
+        /// <summary>
+        /// Returns all nodes that are end points for any sequence.
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<IMinimalDAGNode<T>> GetAllValidEndNodes();
+
+        /// <summary>
+        /// Returns all nodes that are start points for any sequence.
+        /// </summary>
+        /// <returns></returns>
+        IEnumerable<IMinimalDAGNode<T>> GetAllValidStartNodes();
     } 
 }

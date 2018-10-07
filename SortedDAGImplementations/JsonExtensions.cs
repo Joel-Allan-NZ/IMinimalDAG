@@ -12,33 +12,59 @@ namespace MinimalDAGImplementations
 {
     public static class JsonExtensions
     {
-        public static void SerializeToFileCompressed(object value, string path, JsonSerializerSettings settings = null)
+        /// <summary>
+        /// Converts an object to JSON and compresses it, writing to a selected filepath.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="path"></param>
+        /// <param name="settings"></param>
+        public static void WriteCompressedJSONToFile(object value, string path, JsonSerializerSettings settings = null)
         {
             using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                SerializeCompressed(value, fs, settings);
+                CompressJsonStream(value, fs, settings);
         }
 
-        public static void SerializeCompressed(object value, Stream stream, JsonSerializerSettings settings = null)
+        /// <summary>
+        /// Converts an object to a GZIP compressed JSON
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="stream"></param>
+        /// <param name="settings"></param>
+        public static void CompressJsonStream(object value, Stream stream, JsonSerializerSettings settings = null)
         {
-            using (var compressor = new GZipStream(stream, CompressionMode.Compress))
-            using (var writer = new StreamWriter(compressor))
+            //using (var compressor = new GZipStream(stream, CompressionMode.Compress))
+            using (var writer = new StreamWriter(new GZipStream(stream, CompressionMode.Compress)))
             {
                 var serializer = JsonSerializer.CreateDefault(settings);
                 serializer.Serialize(writer, value);
             }
         }
 
-        public static T DeserializeFromFileCompressed<T>(string path, JsonSerializerSettings settings = null)
+        /// <summary>
+        /// Reads a GZIP file containing a JSON, returning a CLR object.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="path"></param>
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        public static T ReadCompressedJSONFromFile<T>(string path, JsonSerializerSettings settings = null)
         {
             using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                return DeserializeCompressed<T>(fs, settings);
+                return DeserializeCompressedJSON<T>(fs, settings);
         }
 
-        public static T DeserializeCompressed<T>(Stream stream, JsonSerializerSettings settings = null)
+        /// <summary>
+        /// Uncompresses and deserializes a GZIP compressed JSON
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="stream"></param>
+        /// <param name="settings"></param>
+        /// <returns></returns>
+        public static T DeserializeCompressedJSON<T>(Stream stream, JsonSerializerSettings settings = null)
         {
-            using (var compressor = new GZipStream(stream, CompressionMode.Decompress))
-            using (var reader = new StreamReader(compressor))
-            using (var jsonReader = new JsonTextReader(reader))
+            //using (var compressor = new GZipStream(stream, CompressionMode.Decompress))
+            //using (var reader = new StreamReader(new GZipStream(stream, CompressionMode.Decompress)))
+            using (var jsonReader = new JsonTextReader(new StreamReader(new GZipStream(stream, CompressionMode.Decompress))))
             {
                 var serializer = JsonSerializer.CreateDefault(settings);
                 return serializer.Deserialize<T>(jsonReader);

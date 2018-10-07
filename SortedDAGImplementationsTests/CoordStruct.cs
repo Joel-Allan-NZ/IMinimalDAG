@@ -51,6 +51,16 @@ namespace MinimalDAGImplementations.Tests
             }
             return false;
         }
+
+        public static bool operator ==(Coord lhs, Coord rhs)
+        {
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(Coord lhs, Coord rhs)
+        {
+            return !(lhs.Equals(rhs));
+        }
     }
 
 

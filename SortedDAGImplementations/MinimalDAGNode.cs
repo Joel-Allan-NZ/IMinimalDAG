@@ -13,52 +13,52 @@ namespace MinimalDAGImplementations
     public class MinimalDAGNode<T> : IMinimalDAGNode<T>
     {
         [JsonProperty]
-        List<Guid> _parents;
+        public List<Guid> Parents { get; set; }
         [JsonProperty]
-        List<Guid> _children;
+        public List<Guid> Children { get; set; }
         [JsonProperty]
-        T _value;
-
-        bool _isSuffixRegistered;
+        public T Value { get; private set; }
+        [JsonIgnore]
+        public bool IsSuffixRegistered { get; set; }
         [JsonProperty]
-        Guid _ID;
+        public Guid ID { get; private set; }
 
         public MinimalDAGNode(T value, Guid id)
         {
-            _value = value;
-            _parents = new List<Guid>();
-            _children = new List<Guid>();
-            _ID = id;
+            Value = value;
+            Parents = new List<Guid>();
+            Children = new List<Guid>();
+            ID = id;
         }
 
-        public Guid GetID() => _ID;
+        //public Guid GetID() => _ID;
 
 
         [JsonConstructor]
-        public MinimalDAGNode(IEnumerable<Guid> _parents, IEnumerable<Guid> _children, T _value, Guid _ID)
+        public MinimalDAGNode(IEnumerable<Guid> Parents, IEnumerable<Guid> Children, T Value, Guid ID)
         {
-            this._parents = new List<Guid>(_parents);
-            this._children = new List<Guid>(_children);
-            this._value = _value;
-            this._ID = _ID;
+            this.Parents = new List<Guid>(Parents);
+            this.Children = new List<Guid>(Children);
+            this.Value = Value;
+            this.ID = ID;
         }
 
 
-        public IList<Guid> GetParentIDs() => _parents;
+        // public IList<Guid> GetParentIDs() => _parents;
 
-        public IList<Guid> GetChildIDs() => _children;
+        //public IList<Guid> GetChildIDs() => _children;
 
-        public void AddChild(Guid childID) => _children.Add(childID);
+        //public void AddChild(Guid childID) => _children.Add(childID);
 
-        public void AddParent(Guid parentID) => _parents.Add(parentID);
+        //public void AddParent(Guid parentID) => _parents.Add(parentID);
 
-        public T GetValue() => _value;
+        //public T GetValue() => _value;
 
-        public bool IsRegistered() => _isSuffixRegistered;
+        //public bool IsRegistered() => _isSuffixRegistered;
 
-        public void RegisterSuffix() => _isSuffixRegistered = true;
+        //public void RegisterSuffix() => _isSuffixRegistered = true;
 
-        public void RemoveChildID(Guid childID) => _children.Remove(childID);
+        //public void RemoveChildID(Guid childID) => _children.Remove(childID);
 
 
         /// <summary>
@@ -73,9 +73,9 @@ namespace MinimalDAGImplementations
             if (obj != null && obj is MinimalDAGNode<T>)
             {
                 var otherNode = (MinimalDAGNode<T>)obj;
-                if (this._value.Equals(otherNode._value) && this._children.Count == otherNode._children.Count)
+                if (this.Value.Equals(otherNode.Value) && this.Children.Count == otherNode.Children.Count)
                 {
-                    return this._children.SequenceEqual(otherNode._children);
+                    return this.Children.SequenceEqual(otherNode.Children);
                 }
             }
             return false;
@@ -90,8 +90,8 @@ namespace MinimalDAGImplementations
             unchecked
             {
                 var con = "";
-                con += _value.GetHashCode();
-                foreach (var child in _children)
+                con += Value.GetHashCode();
+                foreach (var child in Children)
                     con += child.GetHashCode();
 
                 return con.GetHashCode();

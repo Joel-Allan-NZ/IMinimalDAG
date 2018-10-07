@@ -1,72 +1,74 @@
 ﻿using IMinimalDAGInterfaces;
+using MinimalDAGImplementations;
 using MinimalDAGSearcher.Extensions;
 using MinimalDAGSearcher.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace MinimalDAGSearcher
 {
     /// <summary>
-    /// Encapsulates search functionality for an <see cref="IMinimalDAG{T}"/>
+    /// Performance focused MinimalDAG{char} searcher. Sacrifices interface abstraction for speed.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class MinimalDAGSearcher<T> : IMinimalDAGSearcher<T>
+    public class MinimalDAWGSearcher
     {
-        private IMinimalDAG<T> _dag;
-
-        public MinimalDAGSearcher(IMinimalDAG<T> dag)
+        private MinimalDAG<char> _dawg;
+        public MinimalDAWGSearcher(MinimalDAG<char> dawg)
         {
-            _dag = dag;
+            _dawg = dawg;
         }
-        
+
         /// <summary>
-        /// Finds possible starting <see cref="SequenceSearchState{T}"/>s for sequence searching in the <see cref="IMinimalDAG{T}"/>
+        /// Finds possible starting <see cref="SequenceSearchState{T}"/>s for sequence searching in the <see cref="MinimalDAG{T}"/>
         /// </summary>
         /// <param name="valuePool"></param>
         /// <param name="index"></param>
         /// <param name="pattern"></param>
         /// <param name="wildCardCount"></param>
         /// <returns></returns>
-        private IEnumerable<SequenceSearchState<T>> FindSearchStartPoints(IEnumerable<T> valuePool, int index, IPattern<T> pattern, int wildCardCount)
+        private IEnumerable<SequenceSearchState<char>> FindSearchStartPoints(List<char> valuePool, int index, Pattern<char> pattern, int wildCardCount)
         {
             var PrefixBoundaries = FindValidBoundaryPositions(-1, pattern);
             var SuffixBoundaries = FindValidBoundaryPositions(1, pattern);
 
-            IEnumerable<IMinimalDAGNode<T>> PossibleStartNodes;
+            IEnumerable<IMinimalDAGNode<char>> PossibleStartNodes;
             var ValidStartValues = pattern.SearchSpace[index];
             if (ValidStartValues.Count == 1)
             {
                 if (pattern.IsPrefixMaximalAtIndex(index))
                 {
                     index = 0;
-                    PossibleStartNodes = _dag.GetAllValidStartNodes().Where(x => x.Value.Equals(pattern.SearchSpace.First().First()));
+                    PossibleStartNodes = _dawg.GetAllValidStartNodes().Where(x => x.Value.Equals(pattern.SearchSpace.First().First()));
                 }
                 else
-                    PossibleStartNodes = _dag.GetAllNodesWithValue(pattern.SearchSpace[index].First());
+                    PossibleStartNodes = _dawg.GetAllNodesWithValue(pattern.SearchSpace[index].First());
 
                 foreach (var Node in PossibleStartNodes)
-                    yield return new SequenceSearchState<T>(Node, valuePool, index, wildCardCount);
+                    yield return new SequenceSearchState<char>(Node, valuePool, index, wildCardCount);
             }
             else
             {
                 foreach (var ValidStart in ValidStartValues)
                 {
-                    PossibleStartNodes = _dag.GetAllNodesWithValue(ValidStart);
-                    var UsedDict = new Dictionary<int, T>();
+                    PossibleStartNodes = _dawg.GetAllNodesWithValue(ValidStart);
+                    var UsedDict = new Dictionary<int, char>();
                     UsedDict.Add(index, ValidStart);
 
                     if (wildCardCount > 0)
                     {
                         List<int> WildCardIndices = new List<int>() { index };
                         foreach (var PossibleStartNode in PossibleStartNodes)
-                            yield return new SequenceSearchState<T>(PossibleStartNode, valuePool, index, wildCardCount - 1, UsedDict, WildCardIndices);
+                            yield return new SequenceSearchState<char>(PossibleStartNode, valuePool, index, wildCardCount - 1, UsedDict, WildCardIndices);
                     }
                     if (valuePool.Contains(ValidStart))
                     {
-                        var UpdatedPool = valuePool.ExceptFirst(ValidStart);
+                        var UpdatedPool = new List<char>(valuePool);//.//valuePool.ExceptFirst(ValidStart);
+                        UpdatedPool.Remove(ValidStart);
                         foreach (var PossibleStartNode in PossibleStartNodes)
-                            yield return new SequenceSearchState<T>(PossibleStartNode, UpdatedPool, index, wildCardCount, UsedDict);
+                            yield return new SequenceSearchState<char>(PossibleStartNode, UpdatedPool, index, wildCardCount, UsedDict);
                     }
                 }
             }
@@ -78,11 +80,11 @@ namespace MinimalDAGSearcher
         /// <param name="valuePool"></param>
         /// <param name="index"></param>
         /// <returns></returns>
-        private IEnumerable<DAGSearchResult<T>> FindValidSequencesContainingIndex(IEnumerable<T> valuePool, int index, IPattern<T> pattern, int wildCardCount)
+        private IEnumerable<DAGSearchResult<char>> FindValidSequencesContainingIndex(List<char> valuePool, int index, Pattern<char> pattern, int wildCardCount)
         {
             var SuffixBoundaries = FindValidBoundaryPositions(1, pattern);
             var PrefixBoundaries = FindValidBoundaryPositions(-1, pattern);
-            IEnumerable<SequenceSearchState<T>> StartingPoints = FindSearchStartPoints(valuePool, index, pattern, wildCardCount);
+            IEnumerable<SequenceSearchState<char>> StartingPoints = FindSearchStartPoints(valuePool, index, pattern, wildCardCount);
 
             return FindMatches(StartingPoints, PrefixBoundaries, SuffixBoundaries, pattern);
         }
@@ -95,44 +97,43 @@ namespace MinimalDAGSearcher
         /// <param name="suffixBoundaries"></param>
         /// <param name="pattern"></param>
         /// <returns></returns>
-        private IEnumerable<DAGSearchResult<T>> FindMatches(IEnumerable<SequenceSearchState<T>> startingStates,
+        private IEnumerable<DAGSearchResult<char>> FindMatches(IEnumerable<SequenceSearchState<char>> startingStates,
                                                                     HashSet<int> prefixBoundaries,
                                                                     HashSet<int> suffixBoundaries,
-                                                                    IPattern<T> pattern)
+                                                                    Pattern<char> pattern)
         {
-            foreach(var startingState in startingStates)
+            foreach (var startingState in startingStates)
             {
                 var index = startingState.Index;
                 var StartNode = startingState.CurrentNode;
 
-                var Prefixes = SequenceSearch(startingState, _dag.GetParents, prefixBoundaries, -1, pattern).ToList();
-                foreach (var Prefix in SequenceSearch(startingState, _dag.GetParents, prefixBoundaries, -1, pattern))
+                var Prefixes = SequenceSearch(startingState, _dawg.GetParents, prefixBoundaries, -1, pattern).ToList();
+                foreach (var Prefix in SequenceSearch(startingState, _dawg.GetParents, prefixBoundaries, -1, pattern))
                 {
                     var SequenceStartIndex = Prefix.Index;
                     Prefix.Index = index;
                     Prefix.CurrentNode = StartNode;
 
-                    foreach (var Suffix in SequenceSearch(Prefix, _dag.GetChildren, suffixBoundaries, 1, pattern))
+                    foreach (var Suffix in SequenceSearch(Prefix, _dawg.GetChildren, suffixBoundaries, 1, pattern))
                     {
                         var Sequence = BuildSequence(Suffix.UsedValues, SequenceStartIndex, pattern);
-                        yield return new DAGSearchResult<T>(Sequence, Suffix.WildCardIndices, SequenceStartIndex, Suffix.UsedValues);
+                        yield return new DAGSearchResult<char>(Sequence, Suffix.WildCardIndices, SequenceStartIndex, Suffix.UsedValues);
                     }
                 }
             }
         }
-
         /// <summary>
         /// Builds a List{<typeparamref name="T"/>} that represents the matched sequence.
         /// </summary>
         /// <param name="matchedValues"></param>
         /// <param name="startingPosition"></param>
         /// <returns></returns>
-        private List<T> BuildSequence(Dictionary<int, T> matchedValues, int startingPosition, IPattern<T> pattern)
+        private List<char> BuildSequence(Dictionary<int, char> matchedValues, int startingPosition, Pattern<char> pattern)
         {
-            List<T> Sequence = new List<T>();
+            List<char> Sequence = new List<char>();
             for (int i = startingPosition; i < pattern.SearchSpace.Length; i++)
             {
-                if (pattern.TryGetConcreteValue(i, out T value))
+                if (pattern.TryGetConcreteValue(i, out char value))
                     Sequence.Add(value);
                 else if (matchedValues.TryGetValue(i, out value))
                     Sequence.Add(value);
@@ -144,18 +145,18 @@ namespace MinimalDAGSearcher
 
         /// <summary>
         /// Searches the <see cref="IMinimalDAG{T}"/> from a starting point in a single direction, returning sequences
-        /// that match the valid <see cref="IPattern{T}"/>
+        /// that match the valid <see cref="Pattern{T}"/>
         /// </summary>
         /// <param name="searchState"></param>
         /// <param name="nextRelativeSelector"></param>
         /// <param name="sequenceBoundaries"></param>
         /// <param name="stepDirection"></param>
         /// <returns></returns>
-        private IEnumerable<SequenceSearchState<T>> SequenceSearch(SequenceSearchState<T> searchState,
-                                                                       Func<IMinimalDAGNode<T>, IEnumerable<IMinimalDAGNode<T>>> nextRelativeSelector,
+        private IEnumerable<SequenceSearchState<char>> SequenceSearch(SequenceSearchState<char> searchState,
+                                                                       Func<IMinimalDAGNode<char>, IEnumerable<IMinimalDAGNode<char>>> nextRelativeSelector,
                                                                        HashSet<int> sequenceBoundaries,
                                                                        int stepDirection,
-                                                                       IPattern<T> pattern)
+                                                                       Pattern<char> pattern)
         {
 
             if (IsBoundaryCollision(searchState, nextRelativeSelector, sequenceBoundaries, pattern))
@@ -168,19 +169,19 @@ namespace MinimalDAGSearcher
         }
 
         /// <summary>
-        /// Performs the actual DFS search, finding all <see cref="SequenceSearchState{T}"/> that match the <see cref="IPattern{T}"/>
+        /// Performs the actual DFS search, finding all <see cref="SequenceSearchState{T}"/> that match the <see cref="Pattern{char}"/>
         /// </summary>
         /// <param name="searchState"></param>
         /// <param name="nextRelativeSelector"></param>
         /// <param name="sequenceBoundaries"></param>
         /// <param name="stepDirection"></param>
         /// <returns></returns>
-        private IEnumerable<SequenceSearchState<T>> DepthFirstSequenceSearch(SequenceSearchState<T> searchState,
-                                                                       Func<IMinimalDAGNode<T>, IEnumerable<IMinimalDAGNode<T>>> nextRelativeSelector,
+        private IEnumerable<SequenceSearchState<char>> DepthFirstSequenceSearch(SequenceSearchState<char> searchState,
+                                                                       Func<IMinimalDAGNode<char>, IEnumerable<IMinimalDAGNode<char>>> nextRelativeSelector,
                                                                        HashSet<int> sequenceBoundaries,
-                                                                       int stepDirection, IPattern<T> pattern)
+                                                                       int stepDirection, Pattern<char> pattern)
         {
-            Stack<SequenceSearchState<T>> ToCheck = new Stack<SequenceSearchState<T>>();
+            Stack<SequenceSearchState<char>> ToCheck = new Stack<SequenceSearchState<char>>();
             ToCheck.Push(searchState);
             //NB: recursive searches with yield return build a new iterator for every method call. 
             //A recursive solution would therefore have performance impact (as well as risking stackoverflow in some very deep pattern).
@@ -198,11 +199,11 @@ namespace MinimalDAGSearcher
                 else
                 {
                     bool IsEnd = false;
-                    List<IMinimalDAGNode<T>> OtherRelatives = new List<IMinimalDAGNode<T>>();
+                    List<IMinimalDAGNode<char>> OtherRelatives = new List<IMinimalDAGNode<char>>();
 
                     foreach (var Relative in Relatives)
                     {
-                        if (_dag.IsDAGBoundary(Relative))
+                        if (_dawg.IsDAGBoundary(Relative))
                             IsEnd = true;
                         else
                             OtherRelatives.Add(Relative);
@@ -226,15 +227,15 @@ namespace MinimalDAGSearcher
         /// <param name="nextLocation"></param>
         /// <param name="stepDirection"></param>
         /// <returns></returns>
-        private List<SequenceSearchState<T>> GetNextStates(SequenceSearchState<T> currentState, List<IMinimalDAGNode<T>> relatives, int nextLocation,
-                                                            int stepDirection, IPattern<T> pattern)
+        private List<SequenceSearchState<char>> GetNextStates(SequenceSearchState<char> currentState, List<IMinimalDAGNode<char>> relatives, int nextLocation,
+                                                            int stepDirection, Pattern<char> pattern)
         {
-            List<SequenceSearchState<T>> NextStates = new List<SequenceSearchState<T>>();
-            T concrete;
+            List<SequenceSearchState<char>> NextStates = new List<SequenceSearchState<char>>();
+            char concrete;
             if (pattern.TryGetConcreteValue(nextLocation, out concrete))
             {
                 foreach (var relative in relatives.Where(x => concrete.Equals(x.Value)))
-                    NextStates.Add(new SequenceSearchState<T>(currentState, relative, stepDirection));
+                    NextStates.Add(new SequenceSearchState<char>(currentState, relative, stepDirection));
             }
             else
             {
@@ -246,9 +247,9 @@ namespace MinimalDAGSearcher
                 foreach (var next in ValidNext)
                 {
                     if (currentState.ValuePool.Contains(next.Value))
-                        NextStates.Add(new SequenceSearchState<T>(currentState, next, stepDirection, next.Value, false));
+                        NextStates.Add(new SequenceSearchState<char>(currentState, next, stepDirection, next.Value, false));
                     if (currentState.WildCardCount > 0)
-                        NextStates.Add(new SequenceSearchState<T>(currentState, next, stepDirection, next.Value, true));
+                        NextStates.Add(new SequenceSearchState<char>(currentState, next, stepDirection, next.Value, true));
                 }
 
             }
@@ -260,14 +261,14 @@ namespace MinimalDAGSearcher
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        private bool IsOutOfBounds(int index, IPattern<T> pattern) => (index < 0 || index >= pattern.SearchSpace.Length);
+        private bool IsOutOfBounds(int index, Pattern<char> pattern) => (index < 0 || index >= pattern.SearchSpace.Length);
 
         /// <summary>
         /// Checks if a node is a possible sequence start/end.
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-       // private bool IsPossibleSequenceEnd(IMinimalDAGNode<T> node) => _dag.IsDAGBoundary(node);
+       // private bool IsPossibleSequenceEnd(IMinimalDAGNode<char> node) => _dawg.IsDAGBoundary(node);
 
         /// <summary>
         /// Checks if the <paramref name="index"/> is a valid end point in the search space.
@@ -285,10 +286,10 @@ namespace MinimalDAGSearcher
         /// <param name="nextRelativeSelector"></param>
         /// <param name="sequenceBoundaries"></param>
         /// <returns></returns>
-        private bool IsBoundaryCollision(SequenceSearchState<T> searchState,
-                                                                Func<IMinimalDAGNode<T>, IEnumerable<IMinimalDAGNode<T>>> nextRelativeSelector,
+        private bool IsBoundaryCollision(SequenceSearchState<char> searchState,
+                                                                Func<IMinimalDAGNode<char>, IEnumerable<IMinimalDAGNode<char>>> nextRelativeSelector,
                                                                 HashSet<int> sequenceBoundaries,
-                                                                IPattern<T> pattern)
+                                                                Pattern<char> pattern)
         {
             if (searchState.Index == 0 || searchState.Index == pattern.SearchSpace.Length - 1) //if we're at the edge of the searchspace
             {
@@ -296,7 +297,7 @@ namespace MinimalDAGSearcher
                 {
                     foreach (var Relative in nextRelativeSelector(searchState.CurrentNode))
                     {
-                        if (_dag.IsDAGBoundary(Relative))
+                        if (_dawg.IsDAGBoundary(Relative))
                             return true;
                     }
                 }
@@ -310,7 +311,7 @@ namespace MinimalDAGSearcher
         /// </summary>
         /// <param name="stepDirection"></param>
         /// <returns></returns>
-        private HashSet<int> FindValidBoundaryPositions(int stepDirection, IPattern<T> pattern)
+        private HashSet<int> FindValidBoundaryPositions(int stepDirection, Pattern<char> pattern)
         {
             HashSet<int> Boundaries = new HashSet<int>();
 
@@ -334,7 +335,7 @@ namespace MinimalDAGSearcher
         /// <param name="emptyValue">A value in the <paramref name="possibleValues"/> that represents a currently empty space in the sequence.</param>
         /// <param name="wildCardCount">The number of wildcard values to use in the search</param>
         /// <returns></returns>
-        public IEnumerable<DAGSearchResult<T>> FindMatchingSequences(IEnumerable<T> valuePool, IPattern<T> pattern, int wildCardCount)
+        public IEnumerable<DAGSearchResult<char>> FindMatchingSequences(List<char> valuePool, Pattern<char> pattern, int wildCardCount)
         {
             var StartingIndices = pattern.SequenceBoundaries.Select(x => x[1]).ToList();
 
@@ -355,7 +356,7 @@ namespace MinimalDAGSearcher
         /// <param name="emptyValue">A value in the <paramref name="existingValues"/> that represents a currently empty space in the sequence.</param>
         /// <param name="wildCardCount">The number of wildcard values to use in the search</param>
         /// <returns></returns>
-        public IEnumerable<DAGSearchResult<T>> FindMatchingSequencesContainingIndex(IEnumerable<T> valuePool, IPattern<T> pattern,
+        public IEnumerable<DAGSearchResult<char>> FindMatchingSequencesContainingIndex(List<char> valuePool, Pattern<char> pattern,
                                                                                     int wildCardCount, int index)
         {
             return FindValidSequencesContainingIndex(valuePool, index, pattern, wildCardCount);
@@ -366,6 +367,6 @@ namespace MinimalDAGSearcher
         /// </summary>
         /// <param name="sequence"></param>
         /// <returns></returns>
-        public bool Contains(IEnumerable<T> sequence) => _dag.Contains(sequence);
+        public bool Contains(IEnumerable<char> sequence) => _dawg.Contains(sequence);
     }
 }

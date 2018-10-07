@@ -41,13 +41,13 @@ namespace MinimalDAGImplementations
             _nodes = new Dictionary<Guid, IMinimalDAGNode<T>>();
             _source = _dagNodeFactory.CreateNode(default(T), Guid.NewGuid());
             _sink = _dagNodeFactory.CreateNode(default(T), Guid.NewGuid());
-            _source.AddChild(_sink.GetID());
+            _source.Children.Add(_sink.ID);
 
             _registrationBySuffix.Add(_sink);
-            _sink.RegisterSuffix();
+            _sink.IsSuffixRegistered = true;
 
-            var LastSequence = new List<T>() { _sink.GetValue() }.DefaultIfEmpty(); //lazy but simple fix
-            foreach (var Sequence in sortedSequences)
+            var LastSequence = new List<T>() { _sink.Value }.DefaultIfEmpty(); //lazy but simple fix
+            foreach (IEnumerable<T> Sequence in sortedSequences)
             {
                 AddNextOrderedSequence(Sequence, LastSequence);
                 LastSequence = Sequence;
@@ -83,7 +83,7 @@ namespace MinimalDAGImplementations
         /// <param name="toRecord"></param>
         private void RecordNode(IMinimalDAGNode<T> toRecord)
         {
-            _nodes[toRecord.GetID()] = toRecord;
+            _nodes[toRecord.ID] = toRecord;
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace MinimalDAGImplementations
         private IMinimalDAGNode<T> GetLastChild(IMinimalDAGNode<T> node)
         {
             IMinimalDAGNode<T> ReturnValue = null;
-            _nodes.TryGetValue(node.GetChildIDs().Last(), out ReturnValue);
+            _nodes.TryGetValue(node.Children.Last(), out ReturnValue);
             return ReturnValue;
             //return Nodes[node.GetChildIDs().Last()];
         }
@@ -108,12 +108,12 @@ namespace MinimalDAGImplementations
         private List<List<T>> GetSequences(IMinimalDAGNode<T> root, List<T> partial)
         {
             List<List<T>> Values = new List<List<T>>();
-            if (root.GetID().Equals(_sink.GetID()))
+            if (root.ID.Equals(_sink.ID))
             {
                 Values.Add(partial);
                 return Values;
             }
-            List<T> Sequence = new List<T>(partial) { root.GetValue() };
+            List<T> Sequence = new List<T>(partial) { root.Value };
             foreach (var Child in GetChildren(root))
             {
                 foreach (var Subsequence in GetSequences(Child, Sequence))
@@ -131,16 +131,16 @@ namespace MinimalDAGImplementations
             _nodeIDsWithNullValue = new HashSet<Guid>();
             foreach (IMinimalDAGNode<T> Node in _registrationBySuffix)
             {
-                var Value = Node.GetValue();
+                var Value = Node.Value;
                 if (Value != null)
                 {
                     if (_nodeIDsByValue.ContainsKey(Value))
-                        _nodeIDsByValue[Value].Add(Node.GetID());
+                        _nodeIDsByValue[Value].Add(Node.ID);
                     else
-                        _nodeIDsByValue.Add(Value, new List<Guid>() { Node.GetID() });
+                        _nodeIDsByValue.Add(Value, new List<Guid>() { Node.ID });
                 }
                 else
-                    _nodeIDsWithNullValue.Add(Node.GetID());
+                    _nodeIDsWithNullValue.Add(Node.ID);
             }
         }
 
@@ -151,9 +151,9 @@ namespace MinimalDAGImplementations
         {
             foreach (var Node in _registrationBySuffix)
                 foreach (var Child in GetChildren(Node))
-                    Child.AddParent(Node.GetID());
+                    Child.Parents.Add(Node.ID);
             foreach (var Child in GetChildren(_source))
-                Child.AddParent(_source.GetID());
+                Child.Parents.Add(_source.ID);
         }
 
         /// <summary>
@@ -169,10 +169,10 @@ namespace MinimalDAGImplementations
             {
                 var NewNode = _dagNodeFactory.CreateNode(value, Guid.NewGuid());
                 RecordNode(NewNode);
-                CurrentNode.AddChild(NewNode.GetID());
+                CurrentNode.Children.Add(NewNode.ID);
                 CurrentNode = NewNode;
             }
-            CurrentNode.AddChild(_sink.GetID());
+            CurrentNode.Children.Add(_sink.ID);
         }
 
         /// <summary>
@@ -186,26 +186,26 @@ namespace MinimalDAGImplementations
 
             if (NewestChild != default(IMinimalDAGNode<T>))
             {
-                if (!NewestChild.IsRegistered())
+                if (!NewestChild.IsSuffixRegistered)
                 {
-                    if (NewestChild.GetChildIDs().Count > 0)
+                    if (NewestChild.Children.Count > 0)
                         HandleExistingSuffixes(NewestChild);
                     else
-                        NewestChild.AddChild(_sink.GetID());
+                        NewestChild.Children.Add(_sink.ID);
 
                     IMinimalDAGNode<T> EquivalentNode;
 
                     if (_registrationBySuffix.TryGetValue(NewestChild, out EquivalentNode))
                     {
-                        parent.RemoveChildID(NewestChild.GetID());
+                        parent.Children.Remove(NewestChild.ID);
 
-                        _nodes.Remove(NewestChild.GetID());
-                        parent.AddChild(EquivalentNode.GetID());
+                        _nodes.Remove(NewestChild.ID);
+                        parent.Children.Add(EquivalentNode.ID);
                     }
                     else
                     {
                         _registrationBySuffix.Add(NewestChild);
-                        NewestChild.RegisterSuffix();
+                        NewestChild.IsSuffixRegistered = true;
                     }
                 }
             }
@@ -269,8 +269,8 @@ namespace MinimalDAGImplementations
         /// <returns></returns>
         public bool IsDAGBoundary(IMinimalDAGNode<T> possibleBoundaryNode)
         {
-            var ID = possibleBoundaryNode.GetID();
-            if (ID == _sink.GetID() || ID == _source.GetID())
+            var ID = possibleBoundaryNode.ID;
+            if (ID == _sink.ID || ID == _source.ID)
                 return true;
             return false;
         }
@@ -285,8 +285,8 @@ namespace MinimalDAGImplementations
             var Current = _source;
             foreach (var Value in sequence)
             {
-                Current = GetChildren(Current).FirstOrDefault(x => x.GetValue().Equals(Value));
-                if (Current == null || Current.GetValue().Equals(default(T)))
+                Current = GetChildren(Current).FirstOrDefault(x => x.Value.Equals(Value));
+                if (Current == null || Current.Value.Equals(default(T)))
                     return false;
 
             }
@@ -306,11 +306,11 @@ namespace MinimalDAGImplementations
         public IEnumerable<IMinimalDAGNode<T>> GetChildren(IMinimalDAGNode<T> node)
         {
             IMinimalDAGNode<T> value;
-            foreach (var ID in node.GetChildIDs())
+            foreach (var ID in node.Children)
             {
                 if (_nodes.TryGetValue(ID, out value))
                     yield return value;
-                else if (ID == _sink.GetID())
+                else if (ID == _sink.ID)
                     yield return _sink;
             }
         }
@@ -323,11 +323,11 @@ namespace MinimalDAGImplementations
         public IEnumerable<IMinimalDAGNode<T>> GetParents(IMinimalDAGNode<T> node)
         {
             IMinimalDAGNode<T> value;
-            foreach (var ID in node.GetParentIDs())
+            foreach (var ID in node.Parents)
             {
                 if (_nodes.TryGetValue(ID, out value))
                     yield return value;
-                else if (ID == _source.GetID())
+                else if (ID == _source.ID)
                     yield return _source;
             }
                 //yield return _nodes[ID];
@@ -345,6 +345,10 @@ namespace MinimalDAGImplementations
 
             return Values.SelectMany(x => x).Where(x => x.Count > 0).ToList();
         }
+
+        public IEnumerable<IMinimalDAGNode<T>> GetAllValidEndNodes() => GetParents(_sink);
+
+        public IEnumerable<IMinimalDAGNode<T>> GetAllValidStartNodes() => GetChildren(_source);
 
         public override bool Equals(object obj)
         {

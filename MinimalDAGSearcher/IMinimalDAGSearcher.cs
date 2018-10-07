@@ -15,15 +15,14 @@ namespace MinimalDAGSearcher.Interfaces
     {
         /// <summary>
         /// Search the <see cref="IMinimalDAG{T}"/> for full sequences that match runs of <typeparamref name="T"/> values
-        /// in the <paramref name="existingValues"/> sequence, and consist only of values from the <paramref name="valuePool"/>
+        /// in the <paramref name="pattern"/>, and consist only of values from the <paramref name="valuePool"/>
         /// (without replacements).
         /// </summary>
         /// <param name="valuePool">Values allowed in the matching sequence</param>
-        /// <param name="existingValues">The partial sequence(s) to match</param>
-        /// <param name="emptyValue">A value in the <paramref name="existingValues"/> that represents a currently empty space in the sequence.</param>
-        ///         /// <param name="wildCardCount">The number of wildcard values to use in the search</param>
+        /// <param name="pattern">The pattern to attempt to match.</param>
+        /// <param name="wildCardCount">The number of wildcard values to use in the search</param>
         /// <returns></returns>
-        IEnumerable<DAGSearchResult<T>> FindMatchingSequences(IEnumerable<T> valuePool,  T[] existingValues, T emptyValue, int wildCardCount);
+        IEnumerable<DAGSearchResult<T>> FindMatchingSequences(IEnumerable<T> valuePool, IPattern<T> pattern, int wildCardCount);
 
         /// <summary>
         /// Returns a bool representing if the DAG contains the selected sequence (as a whole sequence)
@@ -33,15 +32,15 @@ namespace MinimalDAGSearcher.Interfaces
         bool Contains(IEnumerable<T> sequence);
 
         /// <summary>
-        /// Search the <see cref="IMinimalDAG{T}"/> for full sequences that match runs of <typeparamref name="T"/> values
-        /// in the <paramref name="existingValues"/> sequence, and consist only of values from the <paramref name="valuePool"/>
+        /// Search the <see cref="IMinimalDAG{T}"/> for full sequences that match runs of <typeparamref name="T"/> values (and contain the
+        /// element at <paramref name="index"/>)
+        /// in the <paramref name="pattern"/>, and consist only of values from the <paramref name="valuePool"/>
         /// (without replacements).
         /// </summary>
         /// <param name="valuePool">Values allowed in the matching sequence</param>
-        /// <param name="existingValues">The partial sequence(s) to match</param>
-        /// <param name="emptyValue">A value in the <paramref name="existingValues"/> that represents a currently empty space in the sequence.</param>
+        /// <param name="pattern">The pattern to attempt to match.</param>
         /// <param name="wildCardCount">The number of wildcard values to use in the search</param>
         /// <returns></returns>
-        IEnumerable<DAGSearchResult<T>> FindMatchingSequencesContainingIndex(IEnumerable<T> valuePool, T[] existingValues, T emptyValue, int wildCardCount, int index);
+        IEnumerable<DAGSearchResult<T>> FindMatchingSequencesContainingIndex(IEnumerable<T> valuePool, IPattern<T> pattern, int wildCardCount, int index);
     }
 }

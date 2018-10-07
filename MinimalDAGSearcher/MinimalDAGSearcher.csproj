@@ -41,6 +41,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IPattern.cs" />
+    <Compile Include="MinimalDAWGSearcher.cs" />
+    <Compile Include="Pattern.cs" />
     <Compile Include="SequenceSearchState.cs" />
     <Compile Include="DAGSearchResult.cs" />
     <Compile Include="IEnumerableExtensions.cs" />
@@ -52,6 +55,10 @@
     <ProjectReference Include="..\ISortedDAGInterfaces\IMinimalDAGInterfaces.csproj">
       <Project>{58147BE6-A87F-4EF9-864E-B022813E5726}</Project>
       <Name>IMinimalDAGInterfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SortedDAGImplementations\MinimalDAGImplementations.csproj">
+      <Project>{1EDE11F0-2365-4AAD-B356-FAD773C46E98}</Project>
+      <Name>MinimalDAGImplementations</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

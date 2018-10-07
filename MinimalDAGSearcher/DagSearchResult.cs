@@ -6,6 +6,10 @@ using System.Threading.Tasks;
 
 namespace MinimalDAGSearcher
 {
+    /// <summary>
+    /// An encapsulation of data returned from a search of a <see cref="IMinimalDAG{T}"/>
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class DAGSearchResult<T>
     {
         /// <summary>
@@ -23,6 +27,9 @@ namespace MinimalDAGSearcher
         /// </summary>
         public int SequenceStartIndex { get; private set; }
 
+        /// <summary>
+        /// The indices at which elements were added
+        /// </summary>
         public Dictionary<int, T> AdditionLocations { get; set; }
         
         public DAGSearchResult(IEnumerable<T> matchingSequence, List<int> wildCardPositions, int startIndex, Dictionary<int, T> newElementPositions)
