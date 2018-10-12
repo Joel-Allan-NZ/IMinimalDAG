@@ -61,6 +61,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="MinimalDAGSearcherTests.cs" />
+    <Compile Include="MinimalDAWGSearcherTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

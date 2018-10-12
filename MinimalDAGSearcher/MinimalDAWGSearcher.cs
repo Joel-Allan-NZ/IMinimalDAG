@@ -3,6 +3,7 @@ using MinimalDAGImplementations;
 using MinimalDAGSearcher.Extensions;
 using MinimalDAGSearcher.Interfaces;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -31,44 +32,57 @@ namespace MinimalDAGSearcher
         /// <returns></returns>
         private IEnumerable<SequenceSearchState<char>> FindSearchStartPoints(List<char> valuePool, int index, Pattern<char> pattern, int wildCardCount)
         {
-            var PrefixBoundaries = FindValidBoundaryPositions(-1, pattern);
-            var SuffixBoundaries = FindValidBoundaryPositions(1, pattern);
-
             IEnumerable<IMinimalDAGNode<char>> PossibleStartNodes;
             var ValidStartValues = pattern.SearchSpace[index];
-            if (ValidStartValues.Count == 1)
+            if (!pattern.IsIndexForcedEmpty(index))
             {
-                if (pattern.IsPrefixMaximalAtIndex(index))
+                if (ValidStartValues.Count == 1)
                 {
-                    index = 0;
-                    PossibleStartNodes = _dawg.GetAllValidStartNodes().Where(x => x.Value.Equals(pattern.SearchSpace.First().First()));
+                    if (pattern.TryGetHardPrefixLimit(index, out int prefixIndex) || index == 0) //hard prefix limit
+                    {
+                        index = prefixIndex;
+                        PossibleStartNodes = _dawg.GetAllValidStartNodes().Where(x => x.Value.Equals(pattern.SearchSpace[index].First()));
+                    }
+                    else if (index > 0 && pattern.TryGetHardPrefixLimit(index - 1, out int softPrefixIndex)) //soft prefix limit
+                    {
+                        if (pattern.SearchSpace[softPrefixIndex] != null)
+                        {
+                            PossibleStartNodes = _dawg.GetAllValidStartNodes().Where(x => x.Value.Equals(pattern.SearchSpace[softPrefixIndex].First()));
+                            var FurtherPossibleStartNodes = _dawg.GetAllValidStartNodes().Where(x => x.Value.Equals(pattern.SearchSpace[index].First()));
+                            PossibleStartNodes = PossibleStartNodes.Concat(FurtherPossibleStartNodes);
+                        }
+                        else PossibleStartNodes = _dawg.GetAllNodesWithValue(pattern.SearchSpace[index].First());
+                    }
+                    else
+                        PossibleStartNodes = _dawg.GetAllNodesWithValue(pattern.SearchSpace[index].First());
+
+                    foreach (var Node in PossibleStartNodes)
+                        yield return new SequenceSearchState<char>(Node, valuePool, index, wildCardCount);
                 }
                 else
-                    PossibleStartNodes = _dawg.GetAllNodesWithValue(pattern.SearchSpace[index].First());
-
-                foreach (var Node in PossibleStartNodes)
-                    yield return new SequenceSearchState<char>(Node, valuePool, index, wildCardCount);
-            }
-            else
-            {
-                foreach (var ValidStart in ValidStartValues)
                 {
-                    PossibleStartNodes = _dawg.GetAllNodesWithValue(ValidStart);
-                    var UsedDict = new Dictionary<int, char>();
-                    UsedDict.Add(index, ValidStart);
+                    foreach (var ValidStart in ValidStartValues)
+                    {
+                        if (!ValidStart.Equals(pattern.EmptyValue))
+                        {
+                            PossibleStartNodes = _dawg.GetAllNodesWithValue(ValidStart);
+                            var UsedDict = new Dictionary<int, char>();
+                            UsedDict.Add(index, ValidStart);
 
-                    if (wildCardCount > 0)
-                    {
-                        List<int> WildCardIndices = new List<int>() { index };
-                        foreach (var PossibleStartNode in PossibleStartNodes)
-                            yield return new SequenceSearchState<char>(PossibleStartNode, valuePool, index, wildCardCount - 1, UsedDict, WildCardIndices);
-                    }
-                    if (valuePool.Contains(ValidStart))
-                    {
-                        var UpdatedPool = new List<char>(valuePool);//.//valuePool.ExceptFirst(ValidStart);
-                        UpdatedPool.Remove(ValidStart);
-                        foreach (var PossibleStartNode in PossibleStartNodes)
-                            yield return new SequenceSearchState<char>(PossibleStartNode, UpdatedPool, index, wildCardCount, UsedDict);
+                            if (wildCardCount > 0)
+                            {
+                                List<int> WildCardIndices = new List<int>() { index };
+                                foreach (var PossibleStartNode in PossibleStartNodes)
+                                    yield return new SequenceSearchState<char>(PossibleStartNode, valuePool, index, wildCardCount - 1, UsedDict, WildCardIndices);
+                            }
+                            if (valuePool.Contains(ValidStart))
+                            {
+                                var UpdatedPool = new List<char>(valuePool);
+                                UpdatedPool.Remove(ValidStart);
+                                foreach (var PossibleStartNode in PossibleStartNodes)
+                                    yield return new SequenceSearchState<char>(PossibleStartNode, UpdatedPool, index, wildCardCount, UsedDict);
+                            }
+                        }
                     }
                 }
             }
@@ -84,7 +98,7 @@ namespace MinimalDAGSearcher
         {
             var SuffixBoundaries = FindValidBoundaryPositions(1, pattern);
             var PrefixBoundaries = FindValidBoundaryPositions(-1, pattern);
-            IEnumerable<SequenceSearchState<char>> StartingPoints = FindSearchStartPoints(valuePool, index, pattern, wildCardCount);
+            IEnumerable<SequenceSearchState<char>> StartingPoints = FindSearchStartPoints(valuePool, index, pattern, wildCardCount).ToList();
 
             return FindMatches(StartingPoints, PrefixBoundaries, SuffixBoundaries, pattern);
         }
@@ -128,7 +142,7 @@ namespace MinimalDAGSearcher
         /// <param name="matchedValues"></param>
         /// <param name="startingPosition"></param>
         /// <returns></returns>
-        private List<char> BuildSequence(Dictionary<int, char> matchedValues, int startingPosition, Pattern<char> pattern)
+        private List<char> BuildSequence(ConcurrentDictionary<int, char> matchedValues, int startingPosition, Pattern<char> pattern)
         {
             List<char> Sequence = new List<char>();
             for (int i = startingPosition; i < pattern.SearchSpace.Length; i++)
@@ -241,7 +255,7 @@ namespace MinimalDAGSearcher
             {
                 var ValidValues = pattern.SearchSpace[nextLocation];
                 var ValidNext = relatives;
-                if (ValidValues != null && !ValidValues.Contains(pattern.EmptyValue))
+                if (ValidValues != null)// && !ValidValues.Contains(pattern.EmptyValue))
                     ValidNext = relatives.Where(x => ValidValues.Contains(x.Value)).ToList();
 
                 foreach (var next in ValidNext)
@@ -319,7 +333,7 @@ namespace MinimalDAGSearcher
             {
                 if (i + stepDirection < 0 || i + stepDirection >= pattern.SearchSpace.Length)
                     Boundaries.Add(i);
-                else if (pattern.IsIndexEmpty(i + stepDirection))
+                else if (pattern.IsIndexPotentiallyEmpty(i + stepDirection))
                     Boundaries.Add(i);
             }
             return Boundaries;
@@ -338,11 +352,15 @@ namespace MinimalDAGSearcher
         public IEnumerable<DAGSearchResult<char>> FindMatchingSequences(List<char> valuePool, Pattern<char> pattern, int wildCardCount)
         {
             var StartingIndices = pattern.SequenceBoundaries.Select(x => x[1]).ToList();
-
+            HashSet<int> UniqueStartingIndices = new HashSet<int>();
             foreach (var StartingIndex in StartingIndices)
             {
-                foreach (var Sequence in FindValidSequencesContainingIndex(valuePool, StartingIndex, pattern, wildCardCount))
-                    yield return Sequence;
+                if (!UniqueStartingIndices.Contains(StartingIndex))
+                {
+                    UniqueStartingIndices.Add(StartingIndex);
+                    foreach (var Sequence in FindValidSequencesContainingIndex(valuePool, StartingIndex, pattern, wildCardCount))
+                        yield return Sequence;
+                }
             }
         }
 

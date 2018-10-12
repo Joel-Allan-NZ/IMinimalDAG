@@ -13,9 +13,9 @@ namespace MinimalDAGSearcher
     public interface IPattern<T>
     {
         /// <summary>
-        /// Acceptable values for each possible index. Null values simply have no restriction, and indices containing
-        /// the EmptyValue either have no restriction (if it's the only value in the collection) or represents a possibly
-        /// empty space.
+        /// Acceptable values for each possible index. Null values have no restriction, indices with both specific values and 
+        /// the default/emptyvalue can contain any of those values, and indices containing only the
+        /// EmptyValue must remain empty.
         /// </summary>
         HashSet<T>[] SearchSpace { get; }
 
@@ -37,11 +37,11 @@ namespace MinimalDAGSearcher
         bool IsIndexConcreteValue(int index);
 
         /// <summary>
-        /// Checks if a given index in the search space is empty (ie has no restriction on acceptable values).
+        /// Checks if a given index in the search space can be empty (ie can be break in a sequence).
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        bool IsIndexEmpty(int index);
+        bool IsIndexPotentiallyEmpty(int index);
 
         /// <summary>
         /// Checks if a given index is part of a sequence leading back to the first index in the searchspace.
@@ -51,6 +51,22 @@ namespace MinimalDAGSearcher
         /// <param name="index"></param>
         /// <returns></returns>
         bool IsPrefixMaximalAtIndex(int index);
+
+        /// <summary>
+        /// Checks if a given index is explicitly empty (ie can't be part of a sequence).
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        bool IsIndexForcedEmpty(int index);
+
+        /// <summary>
+        /// Checks if a given index has a hard limit to its sequence start (ie doesn't have any possible break points
+        /// between it and some explicitly empty/boundary index).
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="prefixIndex"></param>
+        /// <returns></returns>
+        bool TryGetHardPrefixLimit(int index, out int prefixIndex);
 
         /// <summary>
         /// Attempts to retrieve a concrete (ie singular) value from a given index in the search space, returning a boolean

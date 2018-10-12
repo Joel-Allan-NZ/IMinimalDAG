@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -30,9 +31,9 @@ namespace MinimalDAGSearcher
         /// <summary>
         /// The indices at which elements were added
         /// </summary>
-        public Dictionary<int, T> AdditionLocations { get; set; }
+        public ConcurrentDictionary<int, T> AdditionLocations { get; set; }
         
-        public DAGSearchResult(IEnumerable<T> matchingSequence, List<int> wildCardPositions, int startIndex, Dictionary<int, T> newElementPositions)
+        public DAGSearchResult(IEnumerable<T> matchingSequence, List<int> wildCardPositions, int startIndex, ConcurrentDictionary<int, T> newElementPositions)
         {
             MatchingSequence = matchingSequence;
             WildCardPositions = wildCardPositions;
