@@ -31,9 +31,9 @@ namespace MinimalDAGSearcher
         /// <summary>
         /// The indices at which elements were added
         /// </summary>
-        public ConcurrentDictionary<int, T> AdditionLocations { get; set; }
+        public Dictionary<int, T> AdditionLocations { get; set; }
         
-        public DAGSearchResult(IEnumerable<T> matchingSequence, List<int> wildCardPositions, int startIndex, ConcurrentDictionary<int, T> newElementPositions)
+        public DAGSearchResult(IEnumerable<T> matchingSequence, List<int> wildCardPositions, int startIndex, Dictionary<int, T> newElementPositions)
         {
             MatchingSequence = matchingSequence;
             WildCardPositions = wildCardPositions;

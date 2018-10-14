@@ -136,7 +136,7 @@ namespace MinimalDAGSearcher
         /// <param name="matchedValues"></param>
         /// <param name="startingPosition"></param>
         /// <returns></returns>
-        private List<T> BuildSequence(ConcurrentDictionary<int, T> matchedValues, int startingPosition, IPattern<T> pattern)
+        private List<T> BuildSequence(Dictionary<int, T> matchedValues, int startingPosition, IPattern<T> pattern)
         {
             List<T> Sequence = new List<T>();
             for (int i = startingPosition; i < pattern.SearchSpace.Length; i++)
