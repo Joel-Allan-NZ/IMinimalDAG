@@ -36,10 +36,7 @@ namespace MinimalDAGSearcher
         {
             SearchSpace = searchSpace;
             EmptyValue = emptyValue;
-            //_linkedToStart = new HashSet<int>();
-            SequenceBoundaries = FindBoundaries();//FindSequenceBoundaries();
-            //FindStartLinks();
-
+            SequenceBoundaries = FindBoundaries();
         }
 
         public Pattern(T[] searchSpace, T emptyValue = default(T))
@@ -60,21 +57,50 @@ namespace MinimalDAGSearcher
         /// Handles maximal prefix updating for a given index (intended to be called sequentially).
         /// </summary>
         /// <param name="index"></param>
-        private void HandleMaxPrefixAtIndex(int index)
-        {
-            //if last element was potentially empty, it's a break for maximal indices
-            //conversely, if the last element was forced empty, it's a new maximal index for following elements
-            if (!IsIndexPotentiallyEmpty(index - 1)) //if last wasn't empty, we inherit any maximal index from it
-            {
-                if (_maxPrefixes.TryGetValue(index - 1, out int max))
-                    _maxPrefixes[index] = max;
-            }
-            if (IsIndexForcedEmpty(index - 1))
-                _maxPrefixes[index] = index;
-        }
+        //private void HandleMaxPrefixAtIndex(int index)
+        //{
+        //    //if last element was potentially empty, it's a break for maximal indices
+        //    //conversely, if the last element was forced empty, it's a new maximal index for following elements
+        //    if (!IsIndexPotentiallyEmpty(index - 1)) //if last wasn't empty, we inherit any maximal index from it
+        //    {
+        //        if (_maxPrefixes.TryGetValue(index - 1, out int max))
+        //            _maxPrefixes[index] = max;
+        //    }
+        //    if (IsIndexForcedEmpty(index - 1))
+        //        _maxPrefixes[index] = index;
+        //}
 
+        //private List<int[]> FindBoundaries()
+        //{
+        //    _maxPrefixes = new Dictionary<int, int>();
+
+        //    List<int> OpenBlocks = new List<int>();
+
+        //    foreach (int index in Enumerable.Range(0, SearchSpace.Length-1))
+        //    {
+        //        if (index > 0)
+        //        {
+        //            // cases: predecessor not empty, and has maximal value -> inherit maximal. not new block.
+        //            //      : precedessor forced empty, this is a maximal value, new block.
+        //            //      
+        //            // seperately:
+        //            //          :this is (possibly) empty, all existing blocks can be terminated (one point earlier than this index)
+        //            //          :this is *not* empty, in which case it's either a continuation of an existing block, or the start of a new block.
+        //            //          
+
+        //            if (!IsIndexPotentiallyEmpty(index - 1) && _maxPrefixes.TryGetValue(index - 1, out int max))
+        //                _maxPrefixes[index] = max;
+        //            else if (IsIndexForcedEmpty(index - 1))
+        //                _maxPrefixes[index] = index;
+        //            else
+
+        //        }
+
+
+        //    }
+        //}
         /// <summary>
-        /// Finds the edges of blocks of values in the searchspace
+        /// Finds the edges of mandatory blocks in the searchspace
         /// </summary>
         /// <returns></returns>
         private List<int[]> FindBoundaries()
@@ -90,32 +116,70 @@ namespace MinimalDAGSearcher
             }
             foreach (int index in Enumerable.Range(1, SearchSpace.Length - 1))
             {
-                HandleMaxPrefixAtIndex(index);
-
-                if(IsIndexPotentiallyEmpty(index)) //end of open block(s)
+                if (IsIndexPotentiallyEmpty(index))
                 {
-                    foreach(var OpenBlock in OpenBlockStarts)
+                    foreach (var OpenBlock in OpenBlockStarts)
                         Boundaries.Add(new int[] { OpenBlock, index - 1 });
                     OpenBlockStarts.Clear();
-
-                    if (SearchSpace[index] != null && IsIndexPotentiallyEmpty(index-1) && !IsIndexForcedEmpty(index) && OpenBlockStarts.Count == 0)
-                    {//potentially empty point, succeeding emptiness
-                        if (index == SearchSpace.Length - 1 || IsIndexPotentiallyEmpty(index + 1)) //followed by emptiness or end
-                            Boundaries.Add(new int[] { index, index });
-                    }
                 }
-                else //is concrete, start or continue block
+                else if (OpenBlockStarts.Count == 0)
+                    OpenBlockStarts.Add(index);
+
+                if (!IsIndexForcedEmpty(index))
                 {
-                    if (OpenBlockStarts.Count == 0)
-                        OpenBlockStarts.Add(index);
+                    if (!IsIndexPotentiallyEmpty(index - 1))
+                        if (_maxPrefixes.TryGetValue(index - 1, out int max))
+                            _maxPrefixes[index] = max;
                 }
-
             }
-            //handle any unclosed blocks
             foreach (var OpenBlock in OpenBlockStarts)
                 Boundaries.Add(new int[] { OpenBlock, SearchSpace.Length - 1 });
             return Boundaries;
         }
+
+        /// <summary>
+        /// Finds the edges of blocks of values in the searchspace
+        /// </summary>
+        /// <returns></returns>
+        //private List<int[]> FindBoundaries()
+        //{
+        //    _maxPrefixes = new Dictionary<int, int>();
+        //    List<int[]> Boundaries = new List<int[]>();
+        //    List<int> OpenBlockStarts = new List<int>();
+
+        //    if (!IsIndexPotentiallyEmpty(0))
+        //    {
+        //        OpenBlockStarts.Add(0);
+        //        _maxPrefixes[0] = 0;
+        //    }
+        //    foreach (int index in Enumerable.Range(1, SearchSpace.Length - 1))
+        //    {
+        //        HandleMaxPrefixAtIndex(index);
+
+        //        if(IsIndexPotentiallyEmpty(index)) //end of open block(s)
+        //        {
+        //            foreach(var OpenBlock in OpenBlockStarts)
+        //                Boundaries.Add(new int[] { OpenBlock, index - 1 });
+        //            OpenBlockStarts.Clear();
+
+        //            if (SearchSpace[index] != null && IsIndexPotentiallyEmpty(index-1) && !IsIndexForcedEmpty(index) && OpenBlockStarts.Count == 0)
+        //            {//potentially empty point, succeeding emptiness
+        //                if (index == SearchSpace.Length - 1 || IsIndexPotentiallyEmpty(index + 1)) //followed by emptiness or end
+        //                    Boundaries.Add(new int[] { index, index });
+        //            }
+        //        }
+        //        else //is concrete, start or continue block
+        //        {
+        //            if (OpenBlockStarts.Count == 0)
+        //                OpenBlockStarts.Add(index);
+        //        }
+
+        //    }
+        //    //handle any unclosed blocks
+        //    foreach (var OpenBlock in OpenBlockStarts)
+        //        Boundaries.Add(new int[] { OpenBlock, SearchSpace.Length - 1 });
+        //    return Boundaries;
+        //}
 
         /// <summary>
         /// Checks if a given index in the search space has a concrete (ie singular) value.
@@ -154,10 +218,16 @@ namespace MinimalDAGSearcher
             return (SearchSpace[index] == null || SearchSpace[index].Contains(EmptyValue));
         }
 
+        /// <summary>
+        /// Checks if a given index in the search space must be empty (ie there are no acceptable values).
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public bool IsIndexForcedEmpty(int index)
         {
             return SearchSpace[index] != null && SearchSpace[index].Count == 1 && SearchSpace[index].Contains(EmptyValue);
         }
+
 
         /// <summary>
         /// Checks if a given index is part of a sequence leading back to the first index in the searchspace.
@@ -168,6 +238,13 @@ namespace MinimalDAGSearcher
         /// <returns></returns>
         public bool IsPrefixMaximalAtIndex(int index) => _maxPrefixes.ContainsKey(index);//true;//_linkedToStart.Contains(index);
 
+        /// <summary>
+        /// Checks if a given index in the pattern is preceeded by mandatory characters. If a mandatory prefix exists, returns that
+        /// prefix via out keyword.
+        /// </summary>
+        /// <param name="index">The index to check for a required prefix.</param>
+        /// <param name="prefixIndex">The starting point of a required prefix (if any)</param>
+        /// <returns></returns>
         public bool TryGetHardPrefixLimit(int index, out int prefixIndex) => _maxPrefixes.TryGetValue(index, out prefixIndex);
     }
 }

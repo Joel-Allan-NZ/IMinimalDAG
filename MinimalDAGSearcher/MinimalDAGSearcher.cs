@@ -1,4 +1,5 @@
 ﻿using IMinimalDAGInterfaces;
+//using MinimalDAGImplementations;
 using MinimalDAGSearcher.Extensions;
 using MinimalDAGSearcher.Interfaces;
 using System;
@@ -16,11 +17,13 @@ namespace MinimalDAGSearcher
     {
         private IMinimalDAG<T> _dag;
 
+        private delegate IEnumerable<IMinimalDAGNode<T>> SearchDelegate(IMinimalDAGNode<T> node, HashSet<T> filter = null);
+
         public MinimalDAGSearcher(IMinimalDAG<T> dag)
         {
             _dag = dag;
         }
-        
+
         /// <summary>
         /// Finds possible starting <see cref="SequenceSearchState{T}"/>s for sequence searching in the <see cref="IMinimalDAG{T}"/>
         /// </summary>
@@ -109,7 +112,7 @@ namespace MinimalDAGSearcher
                                                                     HashSet<int> suffixBoundaries,
                                                                     IPattern<T> pattern)
         {
-            foreach(var startingState in startingStates)
+            foreach (var startingState in startingStates)
             {
                 var index = startingState.Index;
                 var StartNode = startingState.CurrentNode;
@@ -161,7 +164,7 @@ namespace MinimalDAGSearcher
         /// <param name="stepDirection"></param>
         /// <returns></returns>
         private IEnumerable<SequenceSearchState<T>> SequenceSearch(SequenceSearchState<T> searchState,
-                                                                       Func<IMinimalDAGNode<T>, IEnumerable<IMinimalDAGNode<T>>> nextRelativeSelector,
+                                                                       SearchDelegate nextRelativeSelector,
                                                                        HashSet<int> sequenceBoundaries,
                                                                        int stepDirection,
                                                                        IPattern<T> pattern)
@@ -185,7 +188,7 @@ namespace MinimalDAGSearcher
         /// <param name="stepDirection"></param>
         /// <returns></returns>
         private IEnumerable<SequenceSearchState<T>> DepthFirstSequenceSearch(SequenceSearchState<T> searchState,
-                                                                       Func<IMinimalDAGNode<T>, IEnumerable<IMinimalDAGNode<T>>> nextRelativeSelector,
+                                                                       SearchDelegate nextRelativeSelector,
                                                                        HashSet<int> sequenceBoundaries,
                                                                        int stepDirection, IPattern<T> pattern)
         {
@@ -295,7 +298,7 @@ namespace MinimalDAGSearcher
         /// <param name="sequenceBoundaries"></param>
         /// <returns></returns>
         private bool IsBoundaryCollision(SequenceSearchState<T> searchState,
-                                                                Func<IMinimalDAGNode<T>, IEnumerable<IMinimalDAGNode<T>>> nextRelativeSelector,
+                                                                SearchDelegate nextRelativeSelector,
                                                                 HashSet<int> sequenceBoundaries,
                                                                 IPattern<T> pattern)
         {

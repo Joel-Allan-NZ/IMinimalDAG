@@ -18,6 +18,7 @@ namespace MinimalDAGSearcher.Tests
         static string _testDataDirectoryPath;
         static IMinimalDAG<char> _dawg;
         static MinimalDAWGSearcher _searcher;
+        //static MinimalDAWGSearcherAlternate _alt;
 
         [ClassInitialize]
         public static void InitializeTest(TestContext testContext)
@@ -25,6 +26,7 @@ namespace MinimalDAGSearcher.Tests
             _testDataDirectoryPath = @"C:\Users\joelc\source\repos\ScrabbleSolver\TestData";
             _dawg = MinimalDAGSerializer.ReadCompressed<char>(Path.Combine(_testDataDirectoryPath, "ScrabbleJsonSerializedGZIP.gz"));
             _searcher = new MinimalDAWGSearcher((MinimalDAG<char>)_dawg);
+            //_alt = new MinimalDAWGSearcherAlternate((MinimalDAG<char>)_dawg);
         }
 
         [TestMethod]
@@ -67,6 +69,47 @@ namespace MinimalDAGSearcher.Tests
             };
             CollectionAssert.AreEquivalent(ExpectedMatches, Actual);
         }
+
+//        [TestMethod]
+//        public void AltNullValueTest()
+//        {
+//            HashSet<char>[] SearchSpace = new HashSet<char>[]
+//{
+//                null, null, null,
+//                new HashSet<char>(){'i'},
+//                new HashSet<char>(){'z'},
+//                new HashSet<char>(){'z'},
+//                new HashSet<char>(){'a'},
+//                new HashSet<char>(){'r'},
+//                null, null, null
+//};
+//            List<char> CharPool = new List<char>();
+//            var ExpectedMatches = new List<string>()
+//            {
+//                "blizzard",
+//                "blizzardly",
+//                "blizzards",
+//                "blizzardy",
+//                "gizzard",
+//                "gizzards",
+//                "izzard",
+//                "izzards",
+//            };
+
+//            var Actual = _alt.FindMatchingSequences(CharPool, new Pattern<char>(SearchSpace),
+//                                                                   6).Select(x => string.Concat(x.MatchingSequence)).ToList();
+
+//            CollectionAssert.AreEquivalent(ExpectedMatches, Actual);
+//            SearchSpace[2] = new HashSet<char>() { default(char) };
+//            Actual = _alt.FindMatchingSequences(CharPool, new Pattern<char>(SearchSpace),
+//                                                        6).Select(x => string.Concat(x.MatchingSequence)).ToList();
+//            ExpectedMatches = new List<string>()
+//            {
+//                "izzard",
+//                "izzards",
+//            };
+//            CollectionAssert.AreEquivalent(ExpectedMatches, Actual);
+//        }
 
         [TestMethod]
         public void OptionallyEmptyTest()

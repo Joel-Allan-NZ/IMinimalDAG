@@ -22,12 +22,12 @@ namespace MinimalDAGImplementations.Tests
         public static void ClassInitalize(TestContext context)
         {
             _dawgData = TestData.GetCharSequences().OrderBy(x => x);
-            _intData = TestData.GetIntSequences().SequenceOrder();
+            //_intData = TestData.GetIntSequences().SequenceOrder();
             _structData = TestData.GetCoordSequences().SequenceOrder();
             _dateTimeData = TestData.GetDateTimeSequences().SequenceOrder();
 
             _dawg = new MinimalDAG<char>(_dawgData, new MinimalDAGNodeFactory<char>());
-            _intDAG = new MinimalDAG<int?>(_intData, new MinimalDAGNodeFactory<int?>());
+            //_intDAG = new MinimalDAG<int?>(_intData, new MinimalDAGNodeFactory<int?>());
             _structDAG = new MinimalDAG<Coord>(_structData, new MinimalDAGNodeFactory<Coord>());
             _dateTimeDAG = new MinimalDAG<DateTime>(_dateTimeData, new MinimalDAGNodeFactory<DateTime>());
         }
@@ -39,15 +39,15 @@ namespace MinimalDAGImplementations.Tests
             CollectionAssert.AreEquivalent(TestData.GetCharSequences(), Strings);
         }
 
-        [TestMethod]
-        public void IntBuildTest()
-        {
-            var Ints = _intDAG.GetAllSequences().ToList();
-            var ExpectedInts = _intData.ToList();
-            Assert.AreEqual(ExpectedInts.Count, Ints.Count);
-            for (int i = 0; i < ExpectedInts.Count; i++)
-                CollectionAssert.AreEquivalent(ExpectedInts[i].ToList(), Ints[i]);
-        }
+        //[TestMethod]
+        //public void IntBuildTest()
+        //{
+        //    var Ints = _intDAG.GetAllSequences().ToList();
+        //    var ExpectedInts = _intData.ToList();
+        //    Assert.AreEqual(ExpectedInts.Count, Ints.Count);
+        //    for (int i = 0; i < ExpectedInts.Count; i++)
+        //        CollectionAssert.AreEquivalent(ExpectedInts[i].ToList(), Ints[i]);
+        //}
 
         [TestMethod]
         public void StructBuildTest()

@@ -9,6 +9,16 @@ namespace IMinimalDAGInterfaces
     public interface IMinimalDAG<T>
     {
         /// <summary>
+        /// The root of all sequences in the DAG. All valid starting characters/points are children of this node.
+        /// </summary>
+        IMinimalDAGNode<T> Source { get; }
+
+        /// <summary>
+        /// The termination point of all sequences in the DAG. All valid sequences end with this node (note that it isn't considered to be part of a sequence).
+        /// </summary>
+        IMinimalDAGNode<T> Sink { get; }
+
+        /// <summary>
         /// Returns all nodes in the DAG with the specified value.
         /// </summary>
         /// <param name="value"></param>
@@ -37,18 +47,19 @@ namespace IMinimalDAGInterfaces
         IEnumerable<List<T>> GetAllSequences();
 
         /// <summary>
-        /// Returns the nodes's child nodes.
+        /// Returns the nodes's child nodes, with an optional set of allowed values.
         /// </summary>
         /// <param name="node"></param>
+        /// <param name="filter">optional allowed values</param>
         /// <returns></returns>
-        IEnumerable<IMinimalDAGNode<T>> GetChildren(IMinimalDAGNode<T> node);
+        IEnumerable<IMinimalDAGNode<T>> GetChildren(IMinimalDAGNode<T> node, HashSet<T> filter = null);
 
         /// <summary>
-        /// Returns the node's parent nodes.
+        /// Returns the node's parent nodes, with an optional set of allowed values.
         /// </summary>
         /// <param name="node"></param>
         /// <returns></returns>
-        IEnumerable<IMinimalDAGNode<T>> GetParents(IMinimalDAGNode<T> node);
+        IEnumerable<IMinimalDAGNode<T>> GetParents(IMinimalDAGNode<T> node, HashSet<T> filter = null);
         /// <summary>
         /// Returns all nodes that are end points for any sequence.
         /// </summary>

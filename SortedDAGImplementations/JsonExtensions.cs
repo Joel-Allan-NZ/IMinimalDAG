@@ -35,6 +35,7 @@ namespace MinimalDAGImplementations
             //using (var compressor = new GZipStream(stream, CompressionMode.Compress))
             using (var writer = new StreamWriter(new GZipStream(stream, CompressionMode.Compress)))
             {
+                settings.Formatting = Formatting.Indented;
                 var serializer = JsonSerializer.CreateDefault(settings);
                 serializer.Serialize(writer, value);
             }

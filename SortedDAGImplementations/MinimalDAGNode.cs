@@ -12,53 +12,52 @@ namespace MinimalDAGImplementations
 {
     public class MinimalDAGNode<T> : IMinimalDAGNode<T>
     {
-        [JsonProperty]
-        public List<Guid> Parents { get; set; }
-        [JsonProperty]
-        public List<Guid> Children { get; set; }
+        //[JsonProperty]
+        //public List<Guid> _parentsList { get; set; }
+        //[JsonProperty]
+
+        internal List<Guid> _childrenList { get; private set; }//shortterm hack
+
         [JsonProperty]
         public T Value { get; private set; }
         [JsonIgnore]
         public bool IsSuffixRegistered { get; set; }
         [JsonProperty]
         public Guid ID { get; private set; }
+        //[JsonIgnore]
+        public Dictionary<T, List<IMinimalDAGNode<T>>> Children { get; private set; } //TODO: pretty sure only parent references need to be a list with this implentation. consider fixing.
+        public Dictionary<T, List<IMinimalDAGNode<T>>> Parents { get; private set; }
 
         public MinimalDAGNode(T value, Guid id)
         {
             Value = value;
-            Parents = new List<Guid>();
-            Children = new List<Guid>();
+            Parents = new Dictionary<T, List<IMinimalDAGNode<T>>>();
+            Children = new Dictionary<T, List<IMinimalDAGNode<T>>>();
             ID = id;
         }
 
-        //public Guid GetID() => _ID;
-
-
-        [JsonConstructor]
-        public MinimalDAGNode(IEnumerable<Guid> Parents, IEnumerable<Guid> Children, T Value, Guid ID)
+        public MinimalDAGNode(T value, Guid id, List<Guid> childIDs)
         {
-            this.Parents = new List<Guid>(Parents);
-            this.Children = new List<Guid>(Children);
-            this.Value = Value;
-            this.ID = ID;
+            Value = value;
+            ID = id;
+            Parents = new Dictionary<T, List<IMinimalDAGNode<T>>>();
+            Children = new Dictionary<T, List<IMinimalDAGNode<T>>>();
+            _childrenList = childIDs;
         }
 
+        public IList<Guid> GetChildIDs()
+        {
+            return _childrenList;
+        }
 
-        // public IList<Guid> GetParentIDs() => _parents;
-
-        //public IList<Guid> GetChildIDs() => _children;
-
-        //public void AddChild(Guid childID) => _children.Add(childID);
-
-        //public void AddParent(Guid parentID) => _parents.Add(parentID);
-
-        //public T GetValue() => _value;
-
-        //public bool IsRegistered() => _isSuffixRegistered;
-
-        //public void RegisterSuffix() => _isSuffixRegistered = true;
-
-        //public void RemoveChildID(Guid childID) => _children.Remove(childID);
+        //[JsonConstructor]
+        //public MinimalDAGNode(IEnumerable<Guid> Parents, IEnumerable<Guid> Children, T Value, Guid ID)
+        //{
+        //    this.Parents = new List<Guid>(Parents);
+        //    this.Children = new List<Guid>(Children);
+        //    this.Value = Value;
+        //    this.ID = ID;
+        //}
 
 
         /// <summary>
@@ -75,7 +74,36 @@ namespace MinimalDAGImplementations
                 var otherNode = (MinimalDAGNode<T>)obj;
                 if (this.Value.Equals(otherNode.Value) && this.Children.Count == otherNode.Children.Count)
                 {
-                    return this.Children.SequenceEqual(otherNode.Children);
+                    var keys  = this.Children.Keys;
+                    var other_keys = otherNode.Children.Keys;
+                    if (keys.SequenceEqual(other_keys))
+                    {
+                        foreach (var key in keys)
+                        {
+                            var childIDs = this.Children[key].Select(x => x.ID);
+                            var otherIDs = otherNode.Children[key].Select(x => x.ID);
+                            if (!childIDs.SequenceEqual(otherIDs))
+                                return false;
+                        }
+                        return true;
+                    }
+                    else
+                        return false;
+                    //var ids = this.Children.Values.Select(x => x.ID);
+                    //var other_ids = otherNode.Children.Values.Select(x => x.ID);
+                    //return ids.SequenceEqual(other_ids);
+                    ////foreach(var child in this.Children)
+                    //{
+                    //    if (otherNode.Children.TryGetValue(child.Key, out IMinimalDAGNode<T> otherChild))
+                    //    {
+                    //        if (otherNode.Children[child.Key] != child.Value)
+                    //            return false;
+                    //    }
+                    //    else
+                    //        return false;
+                    //}
+                    //return true;
+                    //return this.Children.SequenceEqual(otherNode.Children);
                 }
             }
             return false;
@@ -92,7 +120,7 @@ namespace MinimalDAGImplementations
                 var con = "";
                 con += Value.GetHashCode();
                 foreach (var child in Children)
-                    con += child.GetHashCode();
+                    con += child.Value.GetHashCode();
 
                 return con.GetHashCode();
             }
